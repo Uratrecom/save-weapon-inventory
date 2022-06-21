@@ -1,10 +1,6 @@
 {
-    "title": "Save Weapon Inventory",
-    "type": "tool",
-    "tags": [
-        "fun"
-    ],
-    "ignore": [
-		"*jpg"
-	]
+	"title"		:	"Save Weapon Inventory",
+	"type"		:	"Tool",
+	"tags"		:	["fun"],
+	"ignore"	:   ["*.jpg"]
 }
