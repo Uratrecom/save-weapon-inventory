@@ -48,7 +48,3 @@ concommand.Add("swi_cleanup_active_ammo", function()
     net.Start("swi_cleanup_active_ammo")
     net.SendToServer()
 end)
-
-concommand.Add("swi_hide_history", function()
-    HUDDrawPickupHistory()
-end)
