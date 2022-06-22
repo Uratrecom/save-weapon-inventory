@@ -1,4 +1,5 @@
 Swi = {}
+Swi.__index = Swi
 
 for _, f in pairs(file.Find("swi/shared/*", "LUA")) do
     AddCSLuaFile("swi/shared/" .. f)
@@ -7,10 +8,13 @@ end
 
 for _, f in pairs(file.Find("swi/client/*", "LUA")) do
     AddCSLuaFile("swi/client/" .. f)
-    if CLIENT then include("swi/client/" .. f) end
+    
+    if CLIENT then
+        include("swi/client/" .. f)
+    end
 end
 
-if SERVER or game.SinglePlayer() then
+if SERVER then
     for _, f in pairs(file.Find("swi/server/*", "LUA")) do
         include("swi/server/" .. f)
     end

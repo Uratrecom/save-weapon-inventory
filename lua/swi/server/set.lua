@@ -1,80 +1,86 @@
-Swi.GlobalSets = {}
+Swi.globalSets = {}
 
-CreateConVar("swi_sv_save_after_exit", "0", {
-    FCVAR_ARCHIVE,
-    FCVAR_CLIENTDLL,
-    FCVAR_NOTIFY,
+hook.Add("PlayerDisconnect", "swi_remove_player_sets", function(player)
+    Swi.globalSets[player:SteamID()] = nil
+end)
+
+hook.Add("DoPlayerDeath", "swi_grab_set", function(player)
+    Swi.globalSets[player:SteamID()] = Swi.CreateSet(player)
+end)
+
+hook.Add("PlayerSpawn", "swi_give_set", function(player)
+    local set = Swi.globalSets[player:SteamID()]
+
+    if not set or 
+       player:IsBot() or 
+       not GetConVar("swi_sv_save_weapons"):GetBool() or 
+       player:GetInfo("swi_save_weapons") == "0" then 
+        return
+    end
+
+    timer.Simple(0, function() 
+        Swi.Give(
+            set,
+            player,
+            tobool(player:GetInfo("swi_select_weapon")),
+            tobool(player:GetInfo("swi_base_ammo"))
+        )
+    end)
+end)
+
+function Swi.CreateSet(player) 
+    if not IsValid(player) then
+        return
+    end
     
-}, "", 0, 1)
+    local set = Swi.Set()
+    local activeWeapon = player:GetActiveWeapon()
 
-hook.Add("PlayerInitialSpawn", "init_player_sets", function(player)
-    local id = player:SteamID()
-
-    if not Swi.GlobalSets[id] then
-        Swi.GlobalSets[id] = {}
-    end
-end)
-
-hook.Add("PlayerDisconnect", "remove_player_sets", function(player)
-    if GetConVar()
-
-    local id = player:SteamID()
-
-    Swi.GlobalSets[id] = nil
-end)
-
-function setMeta:giveAmmo(player, cleanupAmmo)    
-    if cleanupAmmo then
-        player:StripAmmo()
+    if IsValid(activeWeapon) then
+        set.selectedWeapon = activeWeapon:GetClass()
     end
 
-    for ammoType, ammoAmount in pairs(self.ammo) do
-        player:GiveAmmo(ammoAmount, ammoType, true)
+    for _, weapon in pairs(player:GetWeapons()) do
+        table.insert(set.weapons, weapon:GetClass())
+
+        local primary = weapon:GetPrimaryAmmoType()
+        local secondary = weapon:GetSecondaryAmmoType()
+
+        if primary ~= -1 then
+            set.ammo[primary] = player:GetAmmoCount(primary)
+        end
+
+        if secondary ~= -1 then
+            set.ammo[secondary] = player:GetAmmoCount(secondary)
+        end
     end
+
+    return set
 end
 
-function setMeta:giveWeapons(player, cleanupWeapons, noBaseAmmo)
-    noBaseAmmo = noBaseAmmo and true or false
-
-    if cleanupWeapons then
-        player:StripWeapons()
-    end
-
-    for _, weapon in pairs(self.weapons) do
-        player:Give(weapon, noBaseAmmo)
-    end
-end
-
-function setMeta:give(player, selectWeapon, cleanupAmmo, cleanupWeapons, noBaseAmmo)
-    self:giveAmmo(player, cleanupAmmo)
-    self:giveWeapons(player, cleanupWeapons, noBaseAmmo)
-
-    if selectWeapon and self.selectedWeapon ~= nil then
-        player:SelectWeapon(self.selectedWeapon)
-    end
-end
-
-function Swi.set(name)
-    return setmetatable({
-        name = type(name) == "string" and name or "",
+function Swi.Set(name)
+    return {
+        name = name or "",
         weapons = {},
         ammo = {},
         selectedWeapon = nil
-    }, setMeta)
+    }
 end
 
-local wait
+function Swi.Give(set, player, selectWeapon, noBaseAmmo)
+    player:StripWeapons()
 
-function Swi.getPlayerSet(player, name, callback)
+    for _, weapon in pairs(set.weapons) do
+        player:Give(weapon, noBaseAmmo)
+    end
 
-end
+    if selectWeapon and set.selectedWeapon ~= nil then
+        player:SelectWeapon(set.selectedWeapon)
+    end
 
-hook.Add("Think", "getPlayerSet", function()
-
-end)
-
-Swi.getPlayerSet(88, "lol", function(set) 
+    player:StripAmmo()
     
-end)
-
-tempSet = Swi.set("temp")
+    for ammoType, ammoAmount in pairs(set.ammo) do
+        player:GiveAmmo(ammoAmount, ammoType, true)
+    end
+end
